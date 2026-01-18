@@ -43,9 +43,7 @@ st.success(
 # ==================================================
 # REQUIRED COLUMN VALIDATION (FAIL FAST)
 # ==================================================
-required_cols = {
-    "state", "district", "month", "DSI", "stress_level"
-}
+required_cols = {"state", "district", "month", "DSI", "stress_level"}
 missing = required_cols - set(df.columns)
 
 if missing:
@@ -104,8 +102,7 @@ if months:
 st.subheader("🔴 Top Stressed Districts")
 
 st.dataframe(
-    filtered_df
-    .sort_values("DSI", ascending=False)
+    filtered_df.sort_values("DSI", ascending=False)
     .head(10)[[
         "state",
         "district",
@@ -123,8 +120,7 @@ st.subheader("📈 Average District Stress Index (DSI) Over Time")
 
 fig1, ax1 = plt.subplots(figsize=(10, 4))
 filtered_df.groupby("month")["DSI"].mean().plot(
-    ax=ax1,
-    marker="o"
+    ax=ax1, marker="o"
 )
 ax1.set_xlabel("Month")
 ax1.set_ylabel("Average DSI")
@@ -138,21 +134,24 @@ st.subheader("📊 District Stress Level Distribution")
 
 latest_month = filtered_df["month"].max()
 
-dist = (
-    filtered_df[filtered_df["month"] == latest_month]["stress_level"]
-    .value_counts()
-    .sort_index()
-)
+if pd.isna(latest_month):
+    st.warning("No data available for selected filters.")
+else:
+    dist = (
+        filtered_df[filtered_df["month"] == latest_month]["stress_level"]
+        .value_counts()
+        .sort_index()
+    )
 
-fig2, ax2 = plt.subplots(figsize=(6, 4))
-ax2.bar(dist.index, dist.values)
-ax2.set_xlabel("Stress Level")
-ax2.set_ylabel("Number of Districts")
-ax2.set_title(f"Stress Distribution — {latest_month}")
-st.pyplot(fig2)
+    fig2, ax2 = plt.subplots(figsize=(6, 4))
+    ax2.bar(dist.index, dist.values)
+    ax2.set_xlabel("Stress Level")
+    ax2.set_ylabel("Number of Districts")
+    ax2.set_title(f"Stress Distribution — {latest_month}")
+    st.pyplot(fig2)
 
 # ==================================================
-# GEMINI EXPLANATION LAYER (READ-ONLY)
+# GEMINI EXPLANATION LAYER (FIXED & GUARDED)
 # ==================================================
 st.subheader("💬 Ask the Copilot")
 
@@ -162,35 +161,50 @@ query = st.text_area(
 )
 
 if query:
-    with st.spinner("Analysing using Gemini…"):
-        context = f"""
+    if filtered_df.empty:
+        st.warning("No data available for the selected filters.")
+    else:
+        with st.spinner("Analysing using Gemini…"):
+
+            # ---- LIMIT CONTEXT SIZE (CRITICAL FIX) ----
+            top5 = (
+                filtered_df.sort_values("DSI", ascending=False)
+                .head(5)[["state", "district", "DSI", "stress_level"]]
+            )
+
+            context_text = f"""
 You are an Aadhaar policy analytics assistant.
 
-IMPORTANT RULES:
-- All numbers are pre-computed and loaded from CSV
-- Do NOT invent data
-- Do NOT speculate beyond the data
+Rules:
+- Use ONLY the provided data
+- Do NOT invent numbers
+- Do NOT speculate
+- Be concise and policy-focused
 
-Dataset summary:
-- Records: {len(filtered_df)}
-- Average DSI: {round(filtered_df['DSI'].mean(), 3)}
-- Maximum DSI: {round(filtered_df['DSI'].max(), 3)}
-- Stress distribution: {filtered_df['stress_level'].value_counts().to_dict()}
+Summary:
+Records: {len(filtered_df)}
+Average DSI: {round(filtered_df['DSI'].mean(), 3)}
+Maximum DSI: {round(filtered_df['DSI'].max(), 3)}
 
 Top stressed districts:
-{filtered_df.sort_values("DSI", ascending=False)
-.head(5)[['state','district','DSI','stress_level']]
-.to_string(index=False)}
+{top5.to_string(index=False)}
 
 User question:
 {query}
-
-Explain clearly for government decision-makers.
 """
 
-        response = model.generate_content(context)
-        st.markdown("### 🧠 Copilot Explanation")
-        st.write(response.text)
+            # ---- CORRECT GEMINI REQUEST FORMAT ----
+            response = model.generate_content(
+                contents=[
+                    {
+                        "role": "user",
+                        "parts": [{"text": context_text}]
+                    }
+                ]
+            )
+
+            st.markdown("### 🧠 Copilot Explanation")
+            st.write(response.text)
 
 # ==================================================
 # FOOTER
