@@ -7,7 +7,7 @@ import google.generativeai as genai
 # GEMINI CONFIG (PRIVATE REPO ONLY)
 # ⚠️ DO NOT COMMIT THIS KEY IF REPO BECOMES PUBLIC
 # ==================================================
-GEMINI_API_KEY = "AIzaSyCG4lBVIMpimAcFX-sJakPI20vDNvkQy2c"
+GEMINI_API_KEY = ""
 
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel("gemini-3-flash-preview")
