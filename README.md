@@ -1,157 +1,336 @@
-# UIDAI-Data-Hackathon2026
-# 🆔 Aadhaar Trend Intelligence Copilot (ATIC)
-**UIDAI–NIC Online Hackathon 2026**
+UIDAI-11371-Data-Hackathon2026
+🆔 Aadhaar Trend Intelligence Copilot (ATIC)
 
-ATIC is a **read-only decision-support analytics dashboard** that identifies **patterns, trends, and anomalies** in Aadhaar enrolment and update activity using a **District Stress Index (DSI)** and explains results using a **Gemini-powered natural language layer**.
+UIDAI Data Hackathon 2026
 
----
+Aadhaar Trend Intelligence Copilot (ATIC) is a read-only, analytics-driven governance intelligence system designed to uncover patterns, trends, and operational stress signals in Aadhaar enrolment and update activities across India.
 
-## 📌 Problem Statement
+The project introduces a statistically grounded District Stress Index (DSI) and operationalizes it through an interactive Streamlit dashboard, supported by an AI-assisted explanation layer for interpretability.
 
-UIDAI has released anonymised Aadhaar enrolment and update datasets to enable data-driven insights that support **informed administrative decision-making**.
+📌 Problem Statement
 
-The challenge addressed by this project is to:
-- Detect **abnormal enrolment or update behaviour**
-- Identify **district-level operational stress**
-- Translate complex analytics into **clear, policy-ready insights**
+UIDAI has released anonymised Aadhaar enrolment, demographic update, and biometric update datasets to encourage data-driven insights that support informed administrative decision-making and system monitoring.
 
----
+The core challenges addressed by this project are:
 
-## 💡 Solution Overview
+Identifying abnormal surges and drops in Aadhaar activity
 
-ATIC transforms **pre-computed Aadhaar analytics** into an interactive intelligence copilot that allows stakeholders to:
+Measuring district-level operational stress in a fair and comparable manner
 
-- View **top stressed districts**
-- Observe **temporal stress trends**
-- Understand **stress-level distributions**
-- Ask **natural-language questions** and receive **data-grounded explanations**
+Translating complex analytics into clear, interpretable, governance-ready insights
 
-> ⚠️ The application is strictly **read-only**.  
-> All analytics are **computed offline** and loaded from a single output file.
+💡 Concept & Solution Overview
 
----
+ATIC evaluates Aadhaar activity relative to each district’s own historical baseline, rather than relying on raw counts or national averages. This design choice ensures:
 
-## 📊 Key Features
+Scale-invariant comparisons across districts with very different population sizes
 
-- District Stress Index (DSI) visualisation  
-- Stress classification: Low / Moderate / High / Extreme  
-- Monthly trend analysis  
-- Policy-oriented recommended actions  
-- Gemini-based explanation layer (no recomputation)  
-- Fully reproducible and auditable outputs  
+Robust anomaly detection under non-stationary and burst-driven behavior
 
----
+Fair assessment of operational stress independent of absolute volume
 
-## 🧠 Analytical Methodology (High Level)
+All analytics are computed offline, stored as structured CSV outputs, and visualized through a read-only dashboard.
+The application enables administrators and analysts to:
 
-1. **Data Cleaning & Aggregation**
-   - Raw UIDAI enrolment, demographic, and biometric datasets
-   - Aggregation at District × Month level
+Identify high-stress districts
 
-2. **Feature Engineering**
-   - Normalised update rates
-   - Cross-dataset ratios
+Explore temporal stress patterns
 
-3. **Anomaly Detection**
-   - Statistical Z-score detection
-   - Isolation Forest (ML-based)
+Compare stress distributions across states
 
-4. **District Stress Index (DSI)**
-   - Composite, interpretable stress metric
+Obtain natural-language explanations grounded strictly in computed metrics
 
-5. **Insight Generation**
-   - Tables, charts, and natural-language explanations
+⚠️ The application does not modify data or recompute analytics at runtime.
 
----
+📊 Datasets Used
 
-## 🖥️ Application Architecture
+UIDAI provides three anonymised datasets:
 
-Pre-computed Analytics (CSV)
-↓
+Enrolment Dataset
+
+New Aadhaar enrolments
+
+Age groups: 0–5, 5–17, 18+
+
+Demographic Update Dataset
+
+Name, address, DOB, gender updates
+
+Age groups: 5–17, 17+
+
+Biometric Update Dataset
+
+Fingerprint and iris updates
+
+Age groups: 5–17, 17+
+
+Each dataset spans multiple years and covers nearly the complete district-level administrative geography of India.
+For analysis, all datasets are aggregated to District × Month resolution.
+
+🧠 Analytical Methodology (Detailed)
+1. Data Preprocessing & Canonical Standardization
+
+Merging multi-sheet Excel datasets into unified tables
+
+Normalizing inconsistent date formats and extracting Year-Month
+
+Canonical standardization of states and districts using controlled mappings
+
+Resolution of spelling variants and aliases
+
+Removal of invalid, duplicate, and non-administrative geographic entries
+
+This step ensures geographic consistency, reproducibility, and auditability.
+
+2. Feature Engineering & Monthly Aggregation
+
+For each State, District, Month, the following metrics are computed:
+
+Total enrolments
+
+Total demographic updates
+
+Total biometric updates
+
+A unified total activity measure is defined as:
+
+Total Activity = Enrolments + Demographic Updates + Biometric Updates
+
+
+This produces aligned district-level time series across all activity types.
+
+3. Descriptive Statistical Analysis
+
+Before constructing stress indicators, baseline behavior is established for each district through:
+
+Mean monthly activity
+
+Standard deviation of activity
+
+Distributional inspection (skewness, heavy tails, zero inflation)
+
+Key observations:
+
+Activity distributions are highly right-skewed
+
+Most districts exhibit burst-like, non-stationary behavior
+
+Age-group activity moves in parallel within each dataset
+
+These findings justify district-relative normalization instead of raw counts.
+
+4. District-Relative Stress Signal (Z-Score)
+
+Each district’s monthly activity is standardized relative to its own historical baseline:
+
+𝑍
+𝑑
+,
+𝑡
+=
+𝑋
+𝑑
+,
+𝑡
+−
+𝜇
+𝑑
+𝜎
+𝑑
+Z
+d,t
+	​
+
+=
+σ
+d
+	​
+
+X
+d,t
+	​
+
+−μ
+d
+	​
+
+	​
+
+
+Where:
+
+𝑋
+𝑑
+,
+𝑡
+X
+d,t
+	​
+
+ is observed activity
+
+𝜇
+𝑑
+μ
+d
+	​
+
+ is the district mean
+
+𝜎
+𝑑
+σ
+d
+	​
+
+ is the district standard deviation
+
+Interpretation:
+
+Z ≈ 0 → normal behavior
+
+Z ≥ 2 → statistically unusual
+
+Z ≥ 3 → extreme deviation
+
+This produces a district-relative stress signal over time.
+
+5. Stress Component Construction
+
+For each district, anomaly behavior is summarized using three orthogonal components:
+
+Component	Captures	Governance Question
+Anomaly Count	Frequency	How often does stress occur
+Mean Severity	Typical intensity	How strong are deviations
+Max Severity	Peak shock	How severe was the worst incident
+
+These capture frequency, intensity, and tail risk.
+
+6. District Stress Index (DSI)
+
+Because components exist on different scales, min–max normalization is applied.
+The final composite index is defined as:
+
+DSI = 0.4 × Anomaly Count
+    + 0.3 × Mean Severity
+    + 0.3 × Max Severity
+
+
+DSI ∈ [0, 1]
+
+Stress classification:
+
+Low
+
+Moderate
+
+High
+
+This yields one interpretable, governance-ready metric per district.
+
+🖥️ Streamlit Dashboard
+
+The Streamlit application converts analytical outputs into an interactive decision-support interface featuring:
+
+KPI summary strip
+
+District prioritization table
+
+Top stressed districts visualization
+
+District-level activity and stress timelines
+
+National activity trend
+
+State and stress-level filters
+
+The dashboard is read-only and operates solely on pre-computed analytics.
+
+🔐 AI-Assisted Explanation Layer
+
+Used strictly for interpretation, not computation
+
+Receives validated metrics and summaries only
+
+Explains stress levels and trends in natural language
+
+Does not infer causality or modify results
+
+⚠️ API key is embedded because the repository is private.
+
+🖥️ Application Architecture
+Offline Analytics
+   ↓
+CSV Outputs
+   ↓
 Streamlit Dashboard
-↓
-Tables • Charts • Filters
-↓
-Gemini Explanation Layer
+   ↓
+KPIs • Tables • Charts
+   ↓
+AI Explanation Layer
 
-yaml
-Copy code
-
----
-
-## 📁 Repository Structure
-
-aadhaar-atic/
+📁 Repository Structure
+UIDAI-11371-Data-Hackathon2026/
 │
-├── app.py # Streamlit application
-├── district_stress_index.csv # Final analytical output (single source of truth)
-├── requirements.txt # Dependencies
-├── README.md # Project documentation
+├── app.py
+├── district_stress_index.csv
+├── district_time_series.csv
+├── requirements.txt
+├── README.md
 
-yaml
-Copy code
-
----
-
-## ▶️ How to Run Locally
-
-### Install dependencies
-```bash
+▶️ How to Run Locally
 pip install -r requirements.txt
-Run the Streamlit app
-bash
-Copy code
 streamlit run app.py
-🔐 Gemini API Usage
-Gemini is used only for explanation, not computation
-
-All numerical values are pre-computed
-
-The model receives compact, validated summaries
-
-No analytics are generated or modified by the LLM
-
-⚠️ The API key is embedded because the repository is private.
-Do not make the repository public without removing the key.
 
 📦 Dependencies
-nginx
-Copy code
+
 streamlit
+
 pandas
+
 numpy
-matplotlib
+
+plotly
+
 google-generativeai
+
 👥 Team Members
-Manish Kumar (Team Lead)
 
-Member 2
+Manish M Kumar – Team Lead
 
-Member 3
+Vasukinatha Adiga
+
+Deekshith Patkar
 
 📈 Impact & Applicability
-Enables early identification of district-level Aadhaar stress
 
-Supports targeted administrative intervention
+Enables early identification of district-level Aadhaar operational stress
 
-Converts technical analytics into decision-ready insights
+Supports targeted monitoring and administrative prioritization
 
-Designed for scalability and future integration
+Bridges statistical rigor with governance usability
+
+Designed for scalability and future predictive extensions
 
 📝 Notes
-This repository contains only final outputs and visualisation logic
 
-Data preprocessing and model training are performed offline
+Repository contains final analytics outputs and visualization logic only
 
-Shortlisted teams can submit notebooks separately if requested
+Data preprocessing and modeling are executed offline
+
+Detailed notebooks can be shared if requested
 
 ✅ Hackathon Compliance Checklist
-Uses UIDAI-provided anonymised datasets
 
-Clear analytical methodology
+UIDAI-provided anonymised datasets used
 
-Meaningful insights and visualisations
+Transparent and reproducible methodology
 
-Reproducible and auditable outputs
+Statistically grounded indicators
 
-Strong administrative relevance
+Clear administrative relevance
+
+Final Remark
+
+This repository represents a governance-grade analytics framework, not just a dashboard.
+ATIC demonstrates how large-scale Aadhaar operational data can be transformed into actionable, interpretable intelligence for monitoring and decision support
